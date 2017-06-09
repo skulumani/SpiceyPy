@@ -11064,16 +11064,18 @@ def spkezr_loop_shankar(targ, et, ref, abcorr, obs):
     abcorr = stypes.stringToCharP(abcorr)
     obs = stypes.stringToCharP(obs)
     if not hasattr(et, "__iter__"):
-        et = (et)
+        et = (et,)
     res = []
     for i, t in enumerate(et):
         starg = stypes.emptyDoubleVector(6)
         lt = ctypes.c_double()
         libspice.spkezr_c(targ, ctypes.c_double(t), ref, abcorr, obs, starg, ctypes.byref(lt))
         res.append((stypes.vectorToList(starg), lt.value))
-
+    
     state, lt = map(list, zip(*res))
-    return state, lt
+
+    return numpy.squeeze(state), numpy.squeeze(lt)
+
 @spiceErrorCheck
 def spkezr_oneline(targ, et, ref, abcorr, obs):
     if hasattr(et, "__iter__"):
