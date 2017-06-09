@@ -10989,6 +10989,40 @@ def spkezr(targ, et, ref, abcorr, obs):
             One way light time between observer and target.
     :rtype: tuple
     """
+    targ = stypes.stringToCharP(targ)
+    et = ctypes.c_double(et)
+    ref = stypes.stringToCharP(ref)
+    abcorr = stypes.stringToCharP(abcorr)
+    obs = stypes.stringToCharP(obs)
+    starg = stypes.emptyDoubleVector(6)
+    lt = ctypes.c_double()
+    libspice.spkezr_c(targ, et, ref, abcorr, obs, starg, ctypes.byref(lt))
+    return stypes.vectorToList(starg), lt.value
+
+@spiceErrorCheck
+def spkezr_loop(targ, et, ref, abcorr, obs):
+    """
+    Return the state (position and velocity) of a target body
+    relative to an observing body, optionally corrected for light
+    time (planetary aberration) and stellar aberration.
+
+    http://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/spkezr_c.html
+
+    :param targ: Target body name.
+    :type targ: str
+    :param et: Observer epoch.
+    :type et: float
+    :param ref: Reference frame of output state vector.
+    :type ref: str
+    :param abcorr: Aberration correction flag.
+    :type abcorr: str
+    :param obs: Observing body name.
+    :type obs: str
+    :return:
+            State of target,
+            One way light time between observer and target.
+    :rtype: tuple
+    """
     if hasattr(et, "__iter__"):
         vlen = len(et)
         state = numpy.zeros((vlen, 6), dtype=numpy.float)
@@ -11007,7 +11041,55 @@ def spkezr(targ, et, ref, abcorr, obs):
     libspice.spkezr_c(targ, et, ref, abcorr, obs, starg, ctypes.byref(lt))
     return stypes.vectorToList(starg), lt.value
 
+@spiceErrorCheck
+def spkezr_loop_andrew(targ, et, ref, abcorr, obs):
+    targ = stypes.stringToCharP(targ)
+    ref = stypes.stringToCharP(ref)
+    abcorr = stypes.stringToCharP(abcorr)
+    obs = stypes.stringToCharP(obs)
+    if not hasattr(et, "__iter__"):
+        et = (et)
+    res = []
+    for i, t in enumerate(et):
+        starg = stypes.emptyDoubleVector(6)
+        lt = ctypes.c_double()
+        libspice.spkezr_c(targ, ctypes.c_double(t), ref, abcorr, obs, starg, ctypes.byref(lt))
+        res.append((stypes.vectorToList(starg), lt.value))
+    return res
 
+@spiceErrorCheck
+def spkezr_loop_shankar(targ, et, ref, abcorr, obs):
+    targ = stypes.stringToCharP(targ)
+    ref = stypes.stringToCharP(ref)
+    abcorr = stypes.stringToCharP(abcorr)
+    obs = stypes.stringToCharP(obs)
+    if not hasattr(et, "__iter__"):
+        et = (et)
+    res = []
+    for i, t in enumerate(et):
+        starg = stypes.emptyDoubleVector(6)
+        lt = ctypes.c_double()
+        libspice.spkezr_c(targ, ctypes.c_double(t), ref, abcorr, obs, starg, ctypes.byref(lt))
+        res.append((stypes.vectorToList(starg), lt.value))
+
+    state, lt = map(list, zip(*res))
+    return state, lt
+@spiceErrorCheck
+def spkezr_oneline(targ, et, ref, abcorr, obs):
+    if hasattr(et, "__iter__"):
+        state_and_lt = [spkezr_oneline(targ, t, ref, abcorr, obs) for t in et]
+        state, lt = zip(*state_and_lt)
+        return numpy.asarray(state), numpy.asarray(lt)
+
+    targ = stypes.stringToCharP(targ)
+    et = ctypes.c_double(et)
+    ref = stypes.stringToCharP(ref)
+    abcorr = stypes.stringToCharP(abcorr)
+    obs = stypes.stringToCharP(obs)
+    starg = stypes.emptyDoubleVector(6)
+    lt = ctypes.c_double()
+    libspice.spkezr_c(targ, et, ref, abcorr, obs, starg, ctypes.byref(lt))
+    return stypes.vectorToList(starg), lt.value
 @spiceErrorCheck
 def spkgeo(targ, et, ref, obs):
     """
